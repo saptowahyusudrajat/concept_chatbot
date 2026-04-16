@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GIA — Gresik Intelligent Assistant</title>
+  <title>GIA — Gresik Internal Assistant</title>
   <meta name="description" content="AI Data Assistant untuk Pemerintah Kabupaten Gresik" />
 
   <!-- Fonts -->
@@ -418,6 +418,8 @@
       border-radius: var(--radius-md);
       max-width: 100%;
       word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
       font-size: 15px;
       line-height: 1.6;
     }
@@ -526,14 +528,49 @@
       font-size: 14px;
     }
 
-    .message-bubble table {
-      border-collapse: collapse;
+    /* Table wrapper - enables horizontal scroll on mobile */
+    .message-bubble .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       margin: 12px 0;
-      font-size: 14px;
-      width: 100%;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-sm);
-      overflow: hidden;
+      max-width: 100%;
+      /* subtle shadow to indicate scrollability */
+      background:
+        linear-gradient(to right, var(--color-surface) 30%, rgba(255, 255, 255, 0)),
+        linear-gradient(to right, rgba(255, 255, 255, 0), var(--color-surface) 70%) 0 100%,
+        radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0)),
+        radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0)) 0 100%;
+      background-repeat: no-repeat;
+      background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+      background-attachment: local, local, scroll, scroll;
+    }
+
+    .message-bubble .table-wrapper::-webkit-scrollbar {
+      height: 8px;
+    }
+    .message-bubble .table-wrapper::-webkit-scrollbar-track {
+      background: var(--color-surface-alt);
+      border-radius: 4px;
+    }
+    .message-bubble .table-wrapper::-webkit-scrollbar-thumb {
+      background: var(--color-border-strong);
+      border-radius: 4px;
+    }
+    .message-bubble .table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: var(--color-text-tertiary);
+    }
+
+    .message-bubble table {
+      border-collapse: collapse;
+      margin: 0;
+      font-size: 14px;
+      width: 100%;
+      min-width: max-content;
+      border: none;
+      border-radius: 0;
+      overflow: visible;
     }
 
     .message-bubble thead {
@@ -542,16 +579,18 @@
     }
 
     .message-bubble th {
-      padding: 10px 12px;
+      padding: 10px 14px;
       text-align: left;
       font-weight: 600;
       font-size: 13px;
       letter-spacing: 0.3px;
+      white-space: nowrap;
     }
 
     .message-bubble td {
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-top: 1px solid var(--color-border);
+      vertical-align: top;
     }
 
     .message-bubble tbody tr:nth-child(even) {
@@ -878,24 +917,69 @@
       }
 
       .message.user .message-bubble {
-        max-width: 88%;
+        max-width: 92%;
+      }
+
+      .message.bot .message-bubble {
+        max-width: 100%;
       }
 
       .message-bubble {
         font-size: 14px;
+        padding: 12px 14px;
       }
 
+      /* Smaller table on mobile but keep horizontal scroll */
       .message-bubble table {
         font-size: 12px;
       }
 
-      .message-bubble th,
+      .message-bubble th {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
       .message-bubble td {
-        padding: 8px;
+        padding: 8px 10px;
+      }
+
+      /* Code blocks also scrollable */
+      .message-bubble pre {
+        font-size: 12px;
+        padding: 12px;
       }
 
       .input-footer .powered-by {
         display: none;
+      }
+
+      .input-footer .input-hint {
+        font-size: 10px;
+      }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 380px) {
+      .messages-container {
+        padding: 16px 12px 12px;
+      }
+
+      .message {
+        gap: 10px;
+      }
+
+      .message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+      }
+
+      .welcome-title {
+        font-size: 24px;
+      }
+
+      .welcome-subtitle {
+        font-size: 14px;
       }
     }
   </style>
@@ -909,7 +993,7 @@
         <div class="header-brand">
           <div class="logo">GIA</div>
           <div class="brand-text">
-            <div class="brand-name">Gresik Intelligent Assistant</div>
+            <div class="brand-name">Gresik Internal Assistant</div>
             <div class="brand-subtitle">Decision Support AI • Pemerintah Kabupaten Gresik</div>
           </div>
         </div>
@@ -1123,7 +1207,14 @@
       } else if (role === 'bot') {
         const parsed = marked.parse(content);
         const clean = DOMPurify.sanitize(parsed);
-        bubbleContent = clean;
+        // Wrap every <table> in a scrollable container
+        bubbleContent = clean.replace(
+          /<table>/g,
+          '<div class="table-wrapper"><table>'
+        ).replace(
+          /<\/table>/g,
+          '</table></div>'
+        );
       } else {
         bubbleContent = escapeHtml(content);
       }
